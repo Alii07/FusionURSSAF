@@ -368,9 +368,7 @@ def main():
 
                     # Optionnel : Afficher les erreurs
                     if base_errors or taux_errors:
-                        for error in base_errors + taux_errors:
-                            st.text(error)
-
+                        pass
                 except Exception as e:
                     st.error(f"Erreur lors de l'analyse : {e}")
 
