@@ -201,6 +201,56 @@ model_configs = {
 
 
 simple_models = ["7001", "7020", "7030", "7035", "7040", "7045", "7050"]
+montant_models = ["7001", "7020", "7030", "7035", "7040", "7045", "7050", "7002", "7015", "6082", "6084", "6081", "6085", "7025"]
+
+
+def detect_montant_anomalies_streamlit(df, montant_models):
+    """
+    Génère un rapport des anomalies détectées pour les montants, adapté à Streamlit.
+    """
+    error_log = []  # Stockage des erreurs pour un éventuel débogage
+    report_lines = []  # Lignes du rapport des montants
+
+    try:
+        for model_name in montant_models:
+            try:
+                if model_name in ["6081", "6085", "6082", "6084"]:
+                    if all(col in df.columns for col in [f'{model_name}Base', f'{model_name}Taux', f'{model_name}Montant Sal.']):
+                        # Vérification pour les modèles spécifiques
+                        df_filtered = df[(df[f'{model_name}Taux'] != 0)]  # Filtrer les lignes avec un taux non nul
+                        df[f'{model_name}Anomalie'] = abs(
+                            (df_filtered[f'{model_name}Base'] / df_filtered[f'{model_name}Taux']) -
+                            df_filtered[f'{model_name}Montant Sal.']
+                        ) > 0.01  # Vérifier la marge de 0.01
+                    else:
+                        error_log.append(f"Colonnes manquantes pour le modèle {model_name} dans les montants.")
+
+                else:
+                    if all(col in df.columns for col in [f'{model_name}Base', f'{model_name}Taux 2', f'{model_name}Montant Pat.']):
+                        # Vérification pour les autres modèles
+                        df_filtered = df[(df[f'{model_name}Taux 2'] != 0)]  # Filtrer les lignes avec un taux non nul
+                        df[f'{model_name}Anomalie'] = abs(
+                            (df_filtered[f'{model_name}Base'] / df_filtered[f'{model_name}Taux 2']) -
+                            df_filtered[f'{model_name}Montant Pat.']
+                        ) > 0.01  # Vérifier la marge de 0.01
+                    else:
+                        error_log.append(f"Colonnes manquantes pour le modèle {model_name} dans les montants.")
+
+                # Filtrer les anomalies et ajouter au rapport
+                anomalies = df[df[f'{model_name}Anomalie']]
+                for _, row in anomalies.iterrows():
+                    matricule = row['Matricule'] if 'Matricule' in row else f"Ligne {row.name}"
+                    report_lines.append(
+                        f"Nous avons détecté pour le Matricule {matricule} une anomalie dans le montant : {model_name}\n"
+                    )
+            except Exception as e:
+                error_log.append(f"Erreur pour le modèle {model_name} dans les montants : {e}")
+    except Exception as e:
+        error_log.append(f"Erreur lors de la détection des anomalies de montants : {e}")
+
+    return report_lines, error_log
+
+
 
 def generate_base_anomalies_report_streamlit(df, simple_models, model_configs):
     """
@@ -292,26 +342,36 @@ def detect_taux_anomalies_streamlit(df):
     return report_lines, error_log
 
 
-def merge_anomalies_reports_streamlit(base_lines, taux_lines):
+def merge_anomalies_reports_streamlit(base_lines, taux_lines, montant_lines):
     """
-    Combine les rapports des anomalies des bases et des taux en triant les matricules par ordre croissant.
+    Combine les rapports des anomalies des bases, des taux, et des montants en triant les matricules par ordre croissant.
     """
     anomalies_by_matricule = {}
 
     def extract_anomalies(lines):
         for line in lines:
-            if line.strip().startswith("Nous avons détecté pour le Matricule"):
-                # Extraire le matricule et les modèles
-                parts = line.split("une anomalie dans la cotisation :")
-                matricule = parts[0].split("Matricule")[-1].strip()
-                models = [model.strip() for model in parts[1].split(",")]
-                if matricule not in anomalies_by_matricule:
-                    anomalies_by_matricule[matricule] = set()
-                anomalies_by_matricule[matricule].update(models)
+            if "une anomalie dans la cotisation :" in line:
+                # Vérifier que la ligne contient le texte attendu
+                try:
+                    parts = line.split("une anomalie dans la cotisation :")
+                    if len(parts) < 2:
+                        continue  # Ignorer les lignes mal formatées
 
-    # Extraire les anomalies des deux rapports
+                    matricule = parts[0].split("Matricule")[-1].strip()
+                    models = [model.strip() for model in parts[1].split(",")]
+
+                    if matricule not in anomalies_by_matricule:
+                        anomalies_by_matricule[matricule] = set()
+
+                    anomalies_by_matricule[matricule].update(models)
+                except Exception as e:
+                    # Ajouter un message d'erreur pour une ligne problématique
+                    print(f"Erreur lors du traitement de la ligne : {line}. Erreur : {e}")
+
+    # Extraire les anomalies des trois rapports
     extract_anomalies(base_lines)
     extract_anomalies(taux_lines)
+    extract_anomalies(montant_lines)
 
     # Trier les anomalies par matricule
     sorted_anomalies = dict(sorted(anomalies_by_matricule.items(), key=lambda x: x[0]))
@@ -323,6 +383,7 @@ def merge_anomalies_reports_streamlit(base_lines, taux_lines):
         combined_lines.append(f"Nous avons détecté pour le Matricule {matricule} une anomalie dans la cotisation : {models_list}\n")
 
     return "".join(combined_lines)
+
 
 
 
@@ -370,10 +431,14 @@ def main():
 
                     # Détecter les anomalies des taux
                     taux_lines, taux_errors = detect_taux_anomalies_streamlit(df)
+                    
+                    # Détecter les anomalies des montants
+                    montant_lines, montant_errors = detect_montant_anomalies_streamlit(df, montant_models)
+
 
                     # Fusionner les rapports
                     if base_lines is not None and taux_lines is not None:
-                        combined_report_content = merge_anomalies_reports_streamlit(base_lines, taux_lines)
+                        combined_report_content = merge_anomalies_reports_streamlit(base_lines, taux_lines, montant_lines)
 
                         # Télécharger le rapport combiné
                         st.success("Rapport d'anomalies généré avec succès.")
