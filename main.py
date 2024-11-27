@@ -342,6 +342,25 @@ def main():
         except Exception as e:
             st.error(f"Erreur lors du chargement du fichier : {e}")
             return
+        
+        def charger_dictionnaire(fichier):
+            dictionnaire = {}
+            try:
+                with open(fichier, 'r', encoding='utf-8') as f:
+                    for ligne in f:
+                        code, description = ligne.strip().split(' : ', 1)
+                        dictionnaire[code] = description
+            except FileNotFoundError:
+                st.error(f"Le fichier {fichier} n'a pas été trouvé.")
+            except Exception as e:
+                st.error(f"Erreur lors du chargement du dictionnaire : {e}")
+            return dictionnaire
+        
+        dictionnaire = charger_dictionnaire('./Dictionnaire.txt')
+        df_dictionnaire = pd.DataFrame(list(dictionnaire.items()), columns=['Code', 'Description'])
+
+        st.header('Dictionnaire des Codes et Descriptions')
+        st.dataframe(df_dictionnaire)
 
         # Bouton pour lancer l'analyse
         if st.button("Lancer la détection des anomalies"):
