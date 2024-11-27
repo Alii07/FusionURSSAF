@@ -336,8 +336,7 @@ def main():
         # Charger le fichier CSV
         try:
             df = pd.read_csv(uploaded_file, encoding='utf-8')
-            st.success(f"Fichier chargé avec succès ! Dimensions : {df.shape}")
-            st.write("Aperçu des données :")
+            st.header("Aperçu des données :")
             st.dataframe(df.head())
         except Exception as e:
             st.error(f"Erreur lors du chargement du fichier : {e}")
