@@ -376,11 +376,11 @@ def main():
                         combined_report_content = merge_anomalies_reports_streamlit(base_lines, taux_lines)
 
                         # Télécharger le rapport combiné
-                        st.success("Rapport combiné généré avec succès.")
+                        st.success("Rapport d'anomalies généré avec succès.")
                         st.download_button(
-                            label="Télécharger le rapport combiné",
+                            label="Télécharger le rapport d'anomalies",
                             data=combined_report_content,
-                            file_name="rapport_anomalies_combiné.txt",
+                            file_name="rapport_anomalies.txt",
                             mime="text/plain"
                         )
 
