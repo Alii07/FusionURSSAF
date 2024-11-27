@@ -702,7 +702,6 @@ class Taux:
         missing_columns = [col for col in required_columns if col not in df_filtered.columns]
 
         if missing_columns:
-            st.error(f"Le modèle {model_name} manque des colonnes : {', '.join(missing_columns)}")
             return
 
         # Sélectionner les colonnes spécifiques au modèle
