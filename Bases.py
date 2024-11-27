@@ -437,7 +437,7 @@ class AnomalyDetection:
             # Préparation des colonnes nécessaires
             df[f'{model_name}Base'] = df[f'{model_name}Base'].fillna(0)
             df['Total Brut'] = df['Total Brut'].replace({'\.': '', ',': '.'}, regex=True).astype(float)
-            df['4PlafondCum'] = 4 * df['Plafond CUM']
+            df['4PlafondCum'] = 4 * df['PLAFOND M']
             if 'anomalie' not in df.columns:
                 df['anomalie'] = 0  # Initialisation avec 0 (pas d'anomalie)
 
@@ -456,7 +456,7 @@ class AnomalyDetection:
             # Cas 1 : Prédictions sur `Plafond CUM` vs `6082Base` ou `6084Base`
             df_case1 = df[df['Case'] == 'Cas 1']
             if not df_case1.empty:
-                x_new_case1 = df_case1[['Plafond CUM']].values
+                x_new_case1 = df_case1[['PLAFOND M']].values
                 y_new_case1 = df_case1[f'{model_name}Base'].values
                 actual_labels_case1 = df_case1['anomalie'].values
 
@@ -516,7 +516,7 @@ class AnomalyDetection:
                 misclassified_case2[f'Predicted {model_name}Base'] = y_pred_new_case2[actual_labels_case2 != predicted_labels_case2]
                 misclassified_rows.append(misclassified_case2[['Matricule', f'{model_name}Base', f'Predicted {model_name}Base', 
                                                                 'Assiette Mois M (/102)', '4PlafondCum', 'Case', 
-                                                                'Plafond CUM', "Cumul d'assiette ( Mois courant inclus) (/102)"]])
+                                                                'PLAFOND M', "Cumul d'assiette ( Mois courant inclus) (/102)"]])
 
             # Convertir les listes en tableaux NumPy pour les métriques
             actual_labels = np.array(actual_labels)
