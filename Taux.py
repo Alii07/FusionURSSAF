@@ -341,6 +341,9 @@ class Taux:
         colonnes_a_supprimer = ["CUMUL B MAL M-1"]
         df = df.drop(columns=colonnes_a_supprimer)
         # Prétraitement identique au code de référence
+        df['PLAFOND CUM M-1'] = df['PLAFOND CUM M-1'].fillna(0)
+        df['SMIC M CUM M-1'] = df['SMIC M CUM M-1'].fillna(0)
+        
         df['CUMUL SMIC ( Mois courant inclus)'] = df['SMIC M']+df['SMIC M CUM M-1']
         df['PLAFOND CUM'] = df['PLAFOND M']+df['PLAFOND CUM M-1']
         
@@ -406,8 +409,9 @@ class Taux:
 
         
     def process_model(self, df, model_name, info, anomalies_report, model_anomalies):
-        df_filtered = df
 
+        df_filtered = df
+        
         if df_filtered.empty:
             st.write(f"Aucune donnée à traiter pour le modèle {model_name}.")
             return

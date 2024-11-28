@@ -62,11 +62,13 @@ class AnomalyDetection:
 
     def preprocess_data(self, df, model_name):
         config = self.model_configs[model_name]
+        df["BASE B V"] = df["BASE B V"].fillna(0)
         # Fonction pour créer les labels (clusters) en fonction des règles métier
-        
+        df['PLAFOND CUM M-1'] = df['PLAFOND CUM M-1'].fillna(0)
+        df['SMIC M CUM M-1'] =  df['SMIC M CUM M-1'].fillna(0)
 
         # Création des colonnes nécessaires
-        df['PLAFOND CUM'] = df['PLAFOND CUM M-1'] + df["PLAFOND M"]
+        df['PLAFOND CUM'] = df['PLAFOND CUM M-1'].fillna(0) + df["PLAFOND M"].fillna(0)
         df['Plafond CUM'] = df['PLAFOND CUM']
         df['TRANCHE C PRE'] = df['ASSIETTE CU M-1'] - 4 * df['PLAFOND CUM M-1']
         df['4*PLAFOND CUM'] = 4 * df['Plafond CUM']
@@ -193,8 +195,12 @@ class AnomalyDetection:
         config = self.model_configs[model_name]
 
         if model_name == "7015":
+            df['PLAFOND CUM M-1'] = df['PLAFOND CUM M-1'].fillna(0)
+            df['SMIC M CUM M-1'] =  df['SMIC M CUM M-1'].fillna(0)
+            df["BASE B V"] = df["BASE B V"].fillna(0)
             print(f"Détection des anomalies pour {model_name}...")
-
+            
+            df["ASSIETTE CU M-1"] = df["ASSIETTE CU M-1"].fillna(0)
             df['Assiette cum'] = df["ASSIETTE CU M-1"] + df["Assiette Mois M (/102)"]
             
             # Étape 1 : Vérifier que les modèles de régression sont chargés
@@ -291,6 +297,7 @@ class AnomalyDetection:
             colonnes_a_supprimer = ["CUMUL B MAL M-1"]
             df = df.drop(columns=colonnes_a_supprimer)
             df = df.rename(columns={"BASE B 7002":"CUMUL B MAL M-1"})
+            
 
 
             # Charger les modèles combinés pour 7002
@@ -303,7 +310,8 @@ class AnomalyDetection:
                 df = df.rename(columns={"BASE B 7002": "CUMUL B MAL M-1"})
             else:
                 print("Attention : 'BASE B 7002' est absente du fichier et ne sera pas renommée.")
-
+            df['PLAFOND CUM M-1'] = df['PLAFOND CUM M-1'].fillna(0)
+            df['SMIC M CUM M-1'] =  df['SMIC M CUM M-1'].fillna(0)
             df['CUMUL SMIC ( Mois courant inclus)'] = df['SMIC M'] + df['SMIC M CUM M-1']
             df['PLAFOND CUM'] = df['PLAFOND M']+df['PLAFOND CUM M-1']
 
